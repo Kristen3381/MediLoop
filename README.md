@@ -44,6 +44,7 @@ A production-ready backend for a healthcare referral system with role-based acce
   "role": "DOCTOR",
   "facilityName": "General Hospital"
 }
+
 ```
 
 #### Login
