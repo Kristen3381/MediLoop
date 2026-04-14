@@ -2,12 +2,12 @@ import { format } from 'date-fns';
 import clsx from 'clsx';
 import { CheckCircle2, Circle, Clock } from 'lucide-react';
 
-const STATUS_ORDER = ['Created', 'Accepted', 'In Transit', 'Arrived', 'Completed'];
+const STATUS_ORDER = ['Created', 'Accepted', 'Dispatch Requested', 'Dispatched', 'In Transit', 'Arrived', 'Completed'];
 
-export default function TrackingTimeline({ timeline }) {
-  const currentStatusIndex = Math.max(
-    ...timeline.map(t => STATUS_ORDER.indexOf(t.status))
-  );
+export default function TrackingTimeline({ timeline = [] }) {
+  const currentStatusIndex = timeline && timeline.length > 0
+    ? Math.max(...timeline.map(t => STATUS_ORDER.indexOf(t.status)))
+    : -1;
 
   return (
     <div className="flow-root">

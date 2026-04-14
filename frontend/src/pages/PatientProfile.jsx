@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore, canEditPatient } from '../store/useStore';
-import { User, Phone, Calendar, Clipboard, History, Save, Edit2, ArrowLeft } from 'lucide-react';
+import { User, Clipboard, History, Save, Edit2, ArrowLeft } from 'lucide-react';
 import clsx from 'clsx';
 
 export default function PatientProfile() {
@@ -16,8 +16,12 @@ export default function PatientProfile() {
 
   if (!patient) return <div className="p-10 text-center text-slate-500">Patient not found in registry</div>;
 
-  const canEdit = canEditPatient(user?.role);
   const patientReferrals = referrals.filter(r => r.patientId === id);
+  const isAmbulance = user?.role === 'Ambulance Staff';
+  const activeReferral = patientReferrals.find(r => ['Pending', 'Accepted', 'In Transit', 'Arrived'].includes(r.status));
+  const hasArrived = activeReferral?.status === 'Arrived' || activeReferral?.status === 'Completed';
+  
+  const canEdit = canEditPatient(user?.role) && !(isAmbulance && hasArrived);
 
   const handleSave = async (e) => {
     e.preventDefault();

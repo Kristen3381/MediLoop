@@ -100,6 +100,49 @@ const BACKEND_ROLE_MAP = {
   'AMBULANCE': 'Ambulance Staff'
 };
 
+const mapBackendReferral = (ref, patients) => {
+  // Map status
+  let status = 'Pending';
+  if (ref.status === 'SENT') status = 'Pending';
+  else if (ref.status === 'ACCEPTED') status = 'Accepted';
+  else if (ref.status === 'REJECTED') status = 'Rejected';
+  else if (ref.status === 'DISPATCH_REQUESTED') status = 'Dispatch Requested';
+  else if (ref.status === 'DISPATCHED') status = 'Dispatched';
+  else if (ref.status === 'ARRIVED') status = 'In Transit';
+  else if (ref.status === 'TREATED') status = 'Arrived';
+  else if (ref.status === 'COMPLETED') status = 'Completed';
+  
+  // Map timeline for TrackingTimeline component
+  const timeline = (ref.statusTimeline || []).map(t => {
+    let s = t.status;
+    if (t.status === 'SENT') s = 'Created';
+    else if (t.status === 'ACCEPTED') s = 'Accepted';
+    else if (t.status === 'REJECTED') s = 'Rejected';
+    else if (t.status === 'DISPATCH_REQUESTED') s = 'Dispatch Requested';
+    else if (t.status === 'DISPATCHED') s = 'Dispatched';
+    else if (t.status === 'ARRIVED') s = 'In Transit';
+    else if (t.status === 'TREATED') s = 'Arrived';
+    else if (t.status === 'COMPLETED') s = 'Completed';
+    
+    return {
+      status: s,
+      time: t.timestamp
+    };
+  });
+
+  // Try to find patientId from name
+  const patient = patients.find(p => p.name === ref.patientName);
+  
+  return {
+    ...ref,
+    id: ref._id,
+    status,
+    timeline,
+    patientId: patient ? patient.id : 'PAT-UNKNOWN',
+    reason: ref.condition // Map condition to reason for frontend
+  };
+};
+
 export const useStore = create((set, get) => ({
   user: null,
   token: localStorage.getItem('token'),
@@ -164,26 +207,7 @@ export const useStore = create((set, get) => ({
   fetchReferrals: async () => {
     try {
       const backendReferrals = await referralService.getAll();
-      const referrals = backendReferrals.map(ref => {
-        // Map status
-        let status = 'Pending';
-        if (ref.status === 'SENT') status = 'Pending';
-        else if (ref.status === 'ACCEPTED') status = 'Accepted';
-        else if (ref.status === 'ARRIVED') status = 'In Transit';
-        else if (ref.status === 'TREATED') status = 'Arrived';
-        else if (ref.status === 'COMPLETED') status = 'Completed';
-        
-        // Try to find patientId from name
-        const patient = get().patients.find(p => p.name === ref.patientName);
-        
-        return {
-          ...ref,
-          id: ref._id,
-          status,
-          patientId: patient ? patient.id : 'PAT-UNKNOWN',
-          reason: ref.condition // Map condition to reason for frontend
-        };
-      });
+      const referrals = backendReferrals.map(ref => mapBackendReferral(ref, get().patients));
       set({ referrals });
     } catch (error) {
       get().addToast('Failed to fetch referrals', 'error');
@@ -201,15 +225,7 @@ export const useStore = create((set, get) => ({
       };
       
       const newRef = await referralService.create(payload);
-      
-      // Map the new referral back to frontend format
-      const mappedRef = {
-        ...newRef,
-        id: newRef._id,
-        status: 'Pending',
-        patientId: referralData.patientId,
-        reason: newRef.condition
-      };
+      const mappedRef = mapBackendReferral(newRef, get().patients);
 
       set((state) => ({ referrals: [mappedRef, ...state.referrals] }));
       get().addToast('Referral initiated successfully');
@@ -223,6 +239,10 @@ export const useStore = create((set, get) => ({
       let updatedRef;
       if (status === 'Accepted') {
         updatedRef = await referralService.makeDecision(id, 'ACCEPTED');
+      } else if (status === 'Dispatch Requested') {
+        updatedRef = await referralService.makeDecision(id, 'DISPATCH_REQUESTED');
+      } else if (status === 'Dispatched') {
+        updatedRef = await referralService.makeDecision(id, 'DISPATCHED');
       } else if (status === 'In Transit') {
         updatedRef = await referralService.updateStatus(id, 'ARRIVED');
       } else if (status === 'Arrived') {
@@ -232,15 +252,7 @@ export const useStore = create((set, get) => ({
       }
 
       if (updatedRef) {
-        // Map back to frontend
-        const patient = get().patients.find(p => p.name === updatedRef.patientName);
-        const mappedRef = {
-          ...updatedRef,
-          id: updatedRef._id,
-          status,
-          patientId: patient ? patient.id : 'PAT-UNKNOWN',
-          reason: updatedRef.condition
-        };
+        const mappedRef = mapBackendReferral(updatedRef, get().patients);
 
         set((state) => ({
           referrals: state.referrals.map(r => r.id === id ? mappedRef : r)
@@ -280,6 +292,10 @@ export const useStore = create((set, get) => ({
 }));
 
 // Role Helpers
-export const canEditPatient = (role) => ['Doctor', 'Nurse', 'Admin'].includes(role);
+export const canEditPatient = (role) => ['Doctor', 'Nurse', 'Admin', 'Ambulance Staff'].includes(role);
 export const canManageReferral = (role) => ['Doctor', 'Nurse', 'Admin'].includes(role);
 export const canAcceptReferral = (role) => ['Doctor', 'Admin'].includes(role);
+export const canRequestDispatch = (role) => ['Doctor', 'Nurse', 'Admin'].includes(role);
+export const canAcceptDispatch = (role) => ['Ambulance Staff', 'Admin'].includes(role);
+export const canUpdateTransitStatus = (role) => ['Doctor', 'Nurse', 'Admin', 'Ambulance Staff'].includes(role);
+export const canFinalizeReferral = (role) => ['Doctor', 'Nurse', 'Admin'].includes(role);

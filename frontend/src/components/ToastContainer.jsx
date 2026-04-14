@@ -1,6 +1,6 @@
 import { useStore } from '../store/useStore';
 import clsx from 'clsx';
-import { CheckCircle, AlertCircle, X } from 'lucide-react';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function ToastContainer() {
   const { toasts } = useStore();

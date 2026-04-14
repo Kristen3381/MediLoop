@@ -21,6 +21,7 @@ export default function Analytics() {
     { name: 'Pending', count: referrals.filter(r => r.status === 'Pending').length },
     { name: 'Accepted', count: referrals.filter(r => r.status === 'Accepted').length },
     { name: 'In Transit', count: referrals.filter(r => r.status === 'In Transit').length },
+    { name: 'Arrived', count: referrals.filter(r => r.status === 'Arrived').length },
     { name: 'Completed', count: referrals.filter(r => r.status === 'Completed').length },
   ];
 

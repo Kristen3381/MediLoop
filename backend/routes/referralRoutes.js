@@ -29,7 +29,7 @@ router.get('/:id', getReferralById);
 router.get('/:id/metrics', getMetrics);
 
 router.patch('/:id/decision', checkRole(['DOCTOR', 'ADMIN']), makeDecision);
-router.patch('/:id/status', checkRole(['DOCTOR', 'NURSE', 'ADMIN']), updateStatus);
+router.patch('/:id/status', checkRole(['DOCTOR', 'NURSE', 'ADMIN', 'AMBULANCE']), updateStatus);
 
 // Feedback routes nested under referrals
 router.post('/:id/feedback', checkRole(['DOCTOR', 'NURSE', 'ADMIN']), createFeedback);

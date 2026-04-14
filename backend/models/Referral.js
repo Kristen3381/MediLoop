@@ -16,7 +16,7 @@ const referralSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['SENT', 'ACCEPTED', 'REJECTED', 'ARRIVED', 'TREATED', 'COMPLETED'],
+    enum: ['SENT', 'ACCEPTED', 'REJECTED', 'DISPATCH_REQUESTED', 'DISPATCHED', 'ARRIVED', 'TREATED', 'COMPLETED'],
     default: 'SENT',
   },
   rejectionReason: {
@@ -55,7 +55,7 @@ const referralSchema = new mongoose.Schema({
 });
 
 // Add initial status to timeline
-referralSchema.pre('save', function(next) {
+referralSchema.pre('save', async function() {
   if (this.isNew) {
     this.statusTimeline.push({
       status: 'SENT',
@@ -63,7 +63,6 @@ referralSchema.pre('save', function(next) {
       updatedBy: this.createdBy,
     });
   }
-  next();
 });
 
 module.exports = mongoose.model('Referral', referralSchema);

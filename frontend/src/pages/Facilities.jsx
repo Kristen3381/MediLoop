@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../store/useStore';
-import { Search, MapPin, Bed, Activity, Phone, Users, ShieldAlert } from 'lucide-react';
+import { Search, MapPin, Bed, Phone, Users, ShieldAlert } from 'lucide-react';
 import clsx from 'clsx';
 
 export default function Facilities() {

@@ -29,6 +29,9 @@ export default {
           DEFAULT: '#d97706', // amber-600
           light: '#fef3c7',   // amber-100
         },
+        'brand-gold': '#FDB813',
+        'brand-gold-hover': '#E5A610',
+        'brand-gold-light': '#FFF4D6',
         secondary: '#475569', // slate-600
       },
       borderRadius: {

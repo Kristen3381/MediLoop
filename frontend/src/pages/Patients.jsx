@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../store/useStore';
+import { useStore, canEditPatient } from '../store/useStore';
 import { Search, Plus, UserCircle } from 'lucide-react';
 import AddPatientModal from '../components/AddPatientModal';
 
 export default function Patients() {
   const navigate = useNavigate();
-  const { patients } = useStore();
+  const { patients, user } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -22,13 +22,15 @@ export default function Patients() {
           <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight">Patient Directory</h1>
           <p className="text-xs text-slate-500 font-medium">Official Registry • Kakamega County</p>
         </div>
-        <button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center px-4 py-2 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold uppercase rounded-sm hover:bg-slate-700 dark:hover:bg-slate-200 transition-colors shadow-sm"
-        >
-          <Plus className="-ml-1 mr-2 h-4 w-4" />
-          Register Patient
-        </button>
+        {canEditPatient(user?.role) && (
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold uppercase rounded-sm hover:bg-slate-700 dark:hover:bg-slate-200 transition-colors shadow-sm"
+          >
+            <Plus className="-ml-1 mr-2 h-4 w-4" />
+            Register Patient
+          </button>
+        )}
       </div>
 
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">

@@ -15,45 +15,39 @@ export default function Referrals() {
     ? referrals 
     : referrals.filter(r => r.status === filter);
 
-  const getStatusColor = (status, createdAt) => {
-    const isDelayed = status === 'Pending' && (new Date() - new Date(createdAt)) > 20 * 60 * 1000;
-    if (isDelayed) return 'bg-danger-light text-danger dark:bg-danger/20';
-    
-    switch(status) {
-      case 'Pending': return 'bg-warning-light text-warning dark:bg-warning/20';
-      case 'Accepted': return 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400';
-      case 'In Transit': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
-      case 'Arrived': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400';
-      case 'Completed': return 'bg-success-light text-success dark:bg-success/20';
-      default: return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400';
-    }
-  };
+  const isAmbulance = useStore(state => state.user?.role === 'Ambulance Staff');
 
   return (
-    <div className="space-y-4">
-      <div className="flex sm:items-center justify-between flex-col sm:flex-row gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex sm:items-center justify-between flex-col sm:flex-row gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight">Referral Central</h1>
-          <p className="text-xs text-slate-500 font-medium">Loop Management System • Kakamega County</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            {isAmbulance ? 'Dispatch Communications' : 'Referral Central'}
+          </h1>
+          <p className="text-sm text-slate-500 font-medium">
+            {isAmbulance ? 'Active Transport Dispatches' : 'Loop Management System'} • Kakamega County
+          </p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center px-4 py-2 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold uppercase rounded-sm hover:bg-slate-700 dark:hover:bg-slate-200 transition-colors shadow-sm"
-        >
-          <Plus className="-ml-1 mr-2 h-4 w-4" />
-          Initiate Referral
-        </button>
+        {!isAmbulance && (
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="btn-brand-gold flex items-center shadow-lg shadow-amber-500/20"
+          >
+            <Plus className="-ml-1 mr-2 h-4 w-4" />
+            Initiate Referral
+          </button>
+        )}
       </div>
 
-      <div className="flex bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1 rounded-sm shadow-sm transition-colors">
-        {['All', 'Pending', 'Accepted', 'In Transit', 'Completed'].map(status => (
+      <div className="glass-card p-1.5 rounded-2xl flex space-x-1 border-none shadow-md overflow-x-auto">
+        {['All', 'Pending', 'Accepted', 'Dispatch Requested', 'Dispatched', 'In Transit', 'Arrived', 'Completed'].map(status => (
           <button
             key={status}
             onClick={() => setFilter(status)}
-            className={`flex-1 py-2 text-[10px] font-black uppercase transition-all tracking-widest ${
+            className={`flex-1 py-2.5 text-[10px] font-bold uppercase transition-all tracking-widest rounded-xl ${
               filter === status 
-                ? 'bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 shadow-inner' 
-                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-lg' 
+                : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50'
             }`}
           >
             {status}
@@ -61,50 +55,59 @@ export default function Referrals() {
         ))}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors overflow-hidden">
+      <div className="glass-card rounded-2xl border-none shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead className="bg-slate-50 dark:bg-slate-800/50">
-              <tr>
-                <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-500 uppercase">Patient Record</th>
-                <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest">Routing Path</th>
-                <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-500 uppercase">Timestamp</th>
-                <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-500 uppercase tracking-widest">Details</th>
+          <table className="min-w-full divide-y divide-slate-200/50 dark:divide-slate-700/50">
+            <thead>
+              <tr className="bg-slate-50/50 dark:bg-slate-800/50">
+                <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Patient Record</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Routing Path</th>
+                <th className="px-6 py-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Timestamp</th>
+                <th className="px-6 py-4 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Action</th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
               {filteredReferrals.map((referral) => {
                 const patient = patients.find(p => p.id === referral.patientId);
+                const isDelayed = referral.status === 'Pending' && (new Date() - new Date(referral.createdAt)) > 20 * 60 * 1000;
+
                 return (
                   <tr 
                     key={referral.id} 
                     onClick={() => navigate(`/referrals/${referral.id}`)}
-                    className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
+                    className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group"
                   >
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight">{patient?.name}</div>
-                      <div className="text-[10px] text-slate-500 font-mono mt-0.5">{referral.id}</div>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-accent transition-colors">{patient?.name}</div>
+                      <div className="text-[10px] text-slate-400 font-mono mt-1 uppercase tracking-tighter">{referral.id}</div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-[10px] font-bold text-slate-800 dark:text-slate-300 truncate max-w-[120px]">{referral.fromFacility}</span>
-                        <ArrowRight size={10} className="text-slate-300" />
-                        <span className="text-[10px] font-bold text-slate-800 dark:text-slate-300 truncate max-w-[120px]">{referral.toFacility}</span>
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{referral.fromFacility}</span>
+                        <ArrowRight size={12} className="text-slate-300" />
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-200">{referral.toFacility}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded-sm ${getStatusColor(referral.status, referral.createdAt)}`}>
+                    <td className="px-6 py-5 whitespace-nowrap text-center">
+                      <span className={`status-badge
+                        ${referral.status === 'Completed' ? 'bg-success/10 border-success/20 text-success' : 
+                          referral.status === 'Rejected' ? 'bg-danger/10 border-danger/20 text-danger' :
+                          isDelayed ? 'bg-danger/10 border-danger/20 text-danger animate-pulse' : 
+                          referral.status === 'Pending' ? 'bg-warning/10 border-warning/20 text-warning' : 
+                          referral.status === 'Dispatch Requested' ? 'bg-brand-gold/10 border-brand-gold/20 text-brand-gold' :
+                          referral.status === 'Dispatched' ? 'bg-brand-gold border-brand-gold/20 text-slate-900' :
+                          'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-400'}`}>
                         {referral.status}
                       </span>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase">
-                      {format(new Date(referral.createdAt), 'h:mm a')}
+                    <td className="px-6 py-5 whitespace-nowrap text-[11px] font-bold text-slate-400 uppercase tracking-tighter">
+                      {format(new Date(referral.createdAt), 'MMM d, HH:mm')}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-right">
-                      <button className="text-[10px] font-black uppercase text-accent group-hover:underline">
-                        Control Loop
-                      </button>
+                    <td className="px-6 py-5 whitespace-nowrap text-right">
+                      <span className="text-[10px] font-bold uppercase text-brand-gold group-hover:underline tracking-widest bg-brand-gold/5 px-3 py-1 rounded-full border border-brand-gold/10">
+                        Open Loop
+                      </span>
                     </td>
                   </tr>
                 )
@@ -112,7 +115,12 @@ export default function Referrals() {
             </tbody>
           </table>
           {filteredReferrals.length === 0 && (
-            <div className="py-20 text-center text-xs text-slate-400 dark:text-slate-600 italic uppercase tracking-widest">No matching referrals in loop</div>
+            <div className="py-24 text-center">
+              <div className="text-slate-300 dark:text-slate-700 mb-4 flex justify-center">
+                <Filter size={48} strokeWidth={1} />
+              </div>
+              <p className="text-sm text-slate-400 font-medium uppercase tracking-widest">No matching referrals found</p>
+            </div>
           )}
         </div>
       </div>

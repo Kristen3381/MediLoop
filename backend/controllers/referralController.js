@@ -24,12 +24,20 @@ const getReferrals = async (req, res) => {
   try {
     let query = {};
     if (req.user.role === 'AMBULANCE') {
-      query.createdBy = req.user._id;
+      // Ambulance sees dispatches they're assigned to or those that are requested
+      query = {
+        $or: [
+          { status: 'DISPATCH_REQUESTED' },
+          { assignedTo: req.user._id },
+          { createdBy: req.user._id }
+        ]
+      };
     } else if (req.user.role === 'DOCTOR' || req.user.role === 'NURSE') {
       // Show referrals to their facility or those they created
       query = {
         $or: [
           { toFacility: req.user.facilityName },
+          { fromFacility: req.user.facilityName },
           { createdBy: req.user._id }
         ]
       };
@@ -64,7 +72,8 @@ const getReferralById = async (req, res) => {
 const makeDecision = async (req, res) => {
   try {
     const { status, rejectionReason } = req.body;
-    if (!['ACCEPTED', 'REJECTED'].includes(status)) {
+    const allowedDecisions = ['ACCEPTED', 'REJECTED', 'DISPATCH_REQUESTED', 'DISPATCHED'];
+    if (!allowedDecisions.includes(status)) {
       return res.status(400).json({ error: 'Invalid decision status' });
     }
 
@@ -73,15 +82,22 @@ const makeDecision = async (req, res) => {
       return res.status(404).json({ error: 'Referral not found' });
     }
 
-    if (referral.toFacility !== req.user.facilityName) {
-      return res.status(403).json({ error: 'Unauthorized to make decision for this facility' });
+    // Role-based logic
+    if (status === 'ACCEPTED' || status === 'REJECTED' || status === 'DISPATCH_REQUESTED') {
+      if (referral.toFacility !== req.user.facilityName && req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Unauthorized: Not from destination facility' });
+      }
+    } else if (status === 'DISPATCHED') {
+      if (req.user.role !== 'AMBULANCE' && req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Unauthorized: Only ambulance staff can dispatch' });
+      }
     }
 
     referral.status = status;
     if (status === 'REJECTED') {
       referral.rejectionReason = rejectionReason;
     }
-    if (status === 'ACCEPTED') {
+    if (status === 'ACCEPTED' || status === 'DISPATCHED') {
         referral.assignedTo = req.user._id;
     }
 
@@ -100,7 +116,7 @@ const makeDecision = async (req, res) => {
 const updateStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const allowedStatuses = ['ARRIVED', 'TREATED', 'COMPLETED'];
+    const allowedStatuses = ['DISPATCH_REQUESTED', 'DISPATCHED', 'ARRIVED', 'TREATED', 'COMPLETED'];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid status update' });
     }
@@ -110,11 +126,22 @@ const updateStatus = async (req, res) => {
       return res.status(404).json({ error: 'Referral not found' });
     }
 
-    if (referral.toFacility !== req.user.facilityName) {
-      return res.status(403).json({ error: 'Unauthorized to update status for this facility' });
+    // Allow update if user is from destination facility OR if user is the creator (e.g. Ambulance) OR if user is AMBULANCE and status is DISPATCHED
+    const isAuthorized = 
+      referral.toFacility === req.user.facilityName || 
+      referral.createdBy.toString() === req.user._id.toString() ||
+      (req.user.role === 'AMBULANCE' && (status === 'DISPATCHED' || status === 'ARRIVED')) ||
+      req.user.role === 'ADMIN';
+
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'Unauthorized to update status for this referral' });
     }
 
     referral.status = status;
+    if (status === 'DISPATCHED' || status === 'ARRIVED') {
+      referral.assignedTo = req.user._id;
+    }
+
     referral.statusTimeline.push({
       status,
       updatedBy: req.user._id,
