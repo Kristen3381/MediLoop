@@ -26,16 +26,63 @@ export const STAFF = {
 };
 
 const INITIAL_FACILITIES = [
-  { id: 'FAC-1', name: 'Kakamega County General Hospital (Level 5)', type: 'Level 5 Referral', bedsAvailable: 12, icuAvailable: 2, distance: '0km' },
-  { id: 'FAC-2', name: 'Lumakanda Sub-County Hospital', type: 'Sub-County', bedsAvailable: 5, icuAvailable: 0, distance: '45km' },
-  { id: 'FAC-3', name: 'Malava Sub-County Hospital', type: 'Sub-County', bedsAvailable: 8, icuAvailable: 0, distance: '32km' },
-  { id: 'FAC-4', name: 'Navakholo Sub-County Hospital', type: 'Sub-County', bedsAvailable: 4, icuAvailable: 0, distance: '28km' },
-  { id: 'FAC-5', name: 'Butere Sub-County Hospital', type: 'Sub-County', bedsAvailable: 10, icuAvailable: 0, distance: '55km' },
-  { id: 'FAC-6', name: 'Mumias Level 4 Hospital', type: 'Level 4', bedsAvailable: 15, icuAvailable: 1, distance: '42km' },
-  { id: 'FAC-7', name: 'Matungu Sub-County Hospital', type: 'Sub-County', bedsAvailable: 6, icuAvailable: 0, distance: '48km' },
-  { id: 'FAC-8', name: 'Khwisero Sub-County Hospital', type: 'Sub-County', bedsAvailable: 3, icuAvailable: 0, distance: '38km' },
-  { id: 'FAC-9', name: 'St. Mary’s Mission Hospital Mumias', type: 'Private', bedsAvailable: 25, icuAvailable: 4, distance: '40km' },
-  { id: 'FAC-10', name: 'Shibwe Hospital', type: 'Sub-County', bedsAvailable: 7, icuAvailable: 0, distance: '12km' }
+  { 
+    id: 'FAC-1', 
+    name: 'Kakamega County General Hospital (Level 5)', 
+    type: 'Level 5 Referral', 
+    bedsAvailable: 12, 
+    icuAvailable: 2, 
+    distance: '0km',
+    personnel: [
+      STAFF.DOCTORS[0], // Brian
+      STAFF.DOCTORS[1], // Mercy
+      STAFF.NURSES[0],  // Faith
+      STAFF.ADMINS[0],  // Ruth
+      STAFF.EMTS[0]     // Joseph (Base)
+    ]
+  },
+  { 
+    id: 'FAC-2', 
+    name: 'Lumakanda Sub-County Hospital', 
+    type: 'Sub-County', 
+    bedsAvailable: 5, 
+    icuAvailable: 0, 
+    distance: '45km',
+    personnel: [
+      STAFF.DOCTORS[2], // Kevin
+      STAFF.NURSES[1]   // John
+    ]
+  },
+  { 
+    id: 'FAC-3', 
+    name: 'Malava Sub-County Hospital', 
+    type: 'Sub-County', 
+    bedsAvailable: 8, 
+    icuAvailable: 0, 
+    distance: '32km',
+    personnel: [
+      STAFF.DOCTORS[3], // Sheila
+      STAFF.NURSES[2]   // Everlyne
+    ]
+  },
+  { 
+    id: 'FAC-4', 
+    name: 'Navakholo Sub-County Hospital', 
+    type: 'Sub-County', 
+    bedsAvailable: 4, 
+    icuAvailable: 0, 
+    distance: '28km',
+    personnel: [
+      STAFF.DOCTORS[4], // Peter
+      STAFF.NURSES[3]   // Collins
+    ]
+  },
+  { id: 'FAC-5', name: 'Butere Sub-County Hospital', type: 'Sub-County', bedsAvailable: 10, icuAvailable: 0, distance: '55km', personnel: [STAFF.ADMINS[1]] },
+  { id: 'FAC-6', name: 'Mumias Level 4 Hospital', type: 'Level 4', bedsAvailable: 15, icuAvailable: 1, distance: '42km', personnel: [STAFF.EMTS[1]] },
+  { id: 'FAC-7', name: 'Matungu Sub-County Hospital', type: 'Sub-County', bedsAvailable: 6, icuAvailable: 0, distance: '48km', personnel: [] },
+  { id: 'FAC-8', name: 'Khwisero Sub-County Hospital', type: 'Sub-County', bedsAvailable: 3, icuAvailable: 0, distance: '38km', personnel: [] },
+  { id: 'FAC-9', name: 'St. Mary’s Mission Hospital Mumias', type: 'Private', bedsAvailable: 25, icuAvailable: 4, distance: '40km', personnel: [] },
+  { id: 'FAC-10', name: 'Shibwe Hospital', type: 'Sub-County', bedsAvailable: 7, icuAvailable: 0, distance: '12km', personnel: [] }
 ];
 
 const INITIAL_PATIENTS = [
