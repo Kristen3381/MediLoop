@@ -16,8 +16,8 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/auth', authRoutes);
-app.use('/referrals', referralRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/referrals', referralRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

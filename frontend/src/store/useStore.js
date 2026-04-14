@@ -117,11 +117,13 @@ export const useStore = create((set, get) => ({
       set({ 
         user: { 
           ...data.user, 
-          role: BACKEND_ROLE_MAP[data.user.role] || data.user.role 
+          role: BACKEND_ROLE_MAP[data.user.role] || data.user.role,
+          facility: data.user.facilityName
         }, 
         token: data.token 
       });
       get().addToast('Login successful');
+      await get().fetchReferrals();
       return true;
     } catch (error) {
       get().addToast(error.message, 'error');
@@ -161,7 +163,27 @@ export const useStore = create((set, get) => ({
   // Referrals
   fetchReferrals: async () => {
     try {
-      const referrals = await referralService.getAll();
+      const backendReferrals = await referralService.getAll();
+      const referrals = backendReferrals.map(ref => {
+        // Map status
+        let status = 'Pending';
+        if (ref.status === 'SENT') status = 'Pending';
+        else if (ref.status === 'ACCEPTED') status = 'Accepted';
+        else if (ref.status === 'ARRIVED') status = 'In Transit';
+        else if (ref.status === 'TREATED') status = 'Arrived';
+        else if (ref.status === 'COMPLETED') status = 'Completed';
+        
+        // Try to find patientId from name
+        const patient = get().patients.find(p => p.name === ref.patientName);
+        
+        return {
+          ...ref,
+          id: ref._id,
+          status,
+          patientId: patient ? patient.id : 'PAT-UNKNOWN',
+          reason: ref.condition // Map condition to reason for frontend
+        };
+      });
       set({ referrals });
     } catch (error) {
       get().addToast('Failed to fetch referrals', 'error');
@@ -170,8 +192,26 @@ export const useStore = create((set, get) => ({
 
   addReferral: async (referralData) => {
     try {
-      const newRef = await referralService.create(referralData);
-      set((state) => ({ referrals: [newRef, ...state.referrals] }));
+      const patient = get().patients.find(p => p.id === referralData.patientId);
+      const payload = {
+        patientName: patient ? patient.name : 'Unknown Patient',
+        condition: referralData.reason,
+        urgency: 'MEDIUM', // Default for now
+        toFacility: referralData.toFacility,
+      };
+      
+      const newRef = await referralService.create(payload);
+      
+      // Map the new referral back to frontend format
+      const mappedRef = {
+        ...newRef,
+        id: newRef._id,
+        status: 'Pending',
+        patientId: referralData.patientId,
+        reason: newRef.condition
+      };
+
+      set((state) => ({ referrals: [mappedRef, ...state.referrals] }));
       get().addToast('Referral initiated successfully');
     } catch (error) {
       get().addToast(error.message, 'error');
@@ -180,11 +220,33 @@ export const useStore = create((set, get) => ({
 
   updateReferralStatus: async (id, status) => {
     try {
-      const updatedRef = await referralService.updateStatus(id, status);
-      set((state) => ({
-        referrals: state.referrals.map(r => r._id === id ? updatedRef : r)
-      }));
-      get().addToast(`Referral status updated to ${status}`);
+      let updatedRef;
+      if (status === 'Accepted') {
+        updatedRef = await referralService.makeDecision(id, 'ACCEPTED');
+      } else if (status === 'In Transit') {
+        updatedRef = await referralService.updateStatus(id, 'ARRIVED');
+      } else if (status === 'Arrived') {
+        updatedRef = await referralService.updateStatus(id, 'TREATED');
+      } else if (status === 'Completed') {
+        updatedRef = await referralService.updateStatus(id, 'COMPLETED');
+      }
+
+      if (updatedRef) {
+        // Map back to frontend
+        const patient = get().patients.find(p => p.name === updatedRef.patientName);
+        const mappedRef = {
+          ...updatedRef,
+          id: updatedRef._id,
+          status,
+          patientId: patient ? patient.id : 'PAT-UNKNOWN',
+          reason: updatedRef.condition
+        };
+
+        set((state) => ({
+          referrals: state.referrals.map(r => r.id === id ? mappedRef : r)
+        }));
+        get().addToast(`Referral status updated to ${status}`);
+      }
     } catch (error) {
       get().addToast(error.message, 'error');
     }

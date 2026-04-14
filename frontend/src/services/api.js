@@ -74,14 +74,14 @@ export const referralService = {
     });
     return handleResponse(response);
   },
-  makeDecision: async (id, decision, reason) => {
+  makeDecision: async (id, status, rejectionReason) => {
     const response = await fetch(`${API_BASE_URL}/referrals/${id}/decision`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
         ...getAuthHeader()
       },
-      body: JSON.stringify({ decision, reason }),
+      body: JSON.stringify({ status, rejectionReason }),
     });
     return handleResponse(response);
   }

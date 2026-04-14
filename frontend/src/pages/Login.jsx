@@ -3,56 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { useStore, STAFF } from '../store/useStore';
 
 export default function Login() {
-  const [role, setRole] = useState('Doctor');
+  const [email, setEmail] = useState('staff.kakamega@health.go.ke');
+  const [password, setPassword] = useState('password123');
   const navigate = useNavigate();
   const login = useStore((state) => state.login);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Default to a staff name from the list
-    let staffName = '';
-    if (role === 'Doctor') staffName = STAFF.DOCTORS[1].name; // Dr. Mercy Akinyi
-    else if (role === 'Nurse') staffName = STAFF.NURSES[0].name; // Nurse Faith Atieno
-    else if (role === 'Admin') staffName = STAFF.ADMINS[0].name; // Admin Ruth Wafula
-    else staffName = STAFF.EMTS[0].name; // EMT Joseph Shikuku
-
-    login({
-      id: 'usr-1',
-      name: staffName,
-      role: role,
-      facility: role === 'Doctor' ? 'Kakamega County General Hospital (Level 5)' : 'Malava Sub-County Hospital'
-    });
-    navigate('/dashboard');
+    const success = await login(email, password);
+    if (success) {
+      navigate('/dashboard');
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label htmlFor="role" className="block text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-[0.1em] mb-1">
-          System Access Role
-        </label>
-        <div className="mt-1">
-          <select
-            id="role"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="block w-full text-xs font-bold border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-sm py-2.5 px-3 focus:outline-none focus:border-slate-500 transition-colors"
-          >
-            <option>Doctor</option>
-            <option>Nurse</option>
-            <option>Admin</option>
-            <option>Ambulance Staff</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
         <label className="block text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-[0.1em] mb-1">Employee ID / Email</label>
         <div className="mt-1">
           <input
-            type="text"
-            defaultValue="staff.kakamega@health.go.ke"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
             className="block w-full text-xs font-bold border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-sm py-2.5 px-3 focus:outline-none focus:border-slate-500 transition-colors"
           />
@@ -64,7 +36,8 @@ export default function Login() {
         <div className="mt-1">
           <input
             type="password"
-            defaultValue="password123"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
             className="block w-full text-xs font-bold border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-sm py-2.5 px-3 focus:outline-none focus:border-slate-500 transition-colors"
           />

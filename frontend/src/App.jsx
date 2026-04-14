@@ -13,12 +13,18 @@ import Analytics from './pages/Analytics';
 import { useStore } from './store/useStore';
 
 function App() {
-  const { user, isDark } = useStore();
+  const { user, isDark, fetchReferrals } = useStore();
 
   useEffect(() => {
     if (isDark) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [isDark]);
+
+  useEffect(() => {
+    if (user) {
+      fetchReferrals();
+    }
+  }, [user, fetchReferrals]);
 
   return (
     <BrowserRouter>
