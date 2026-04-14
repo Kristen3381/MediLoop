@@ -166,7 +166,6 @@ export const useStore = create((set, get) => ({
         token: data.token 
       });
       get().addToast('Login successful');
-      await get().fetchReferrals();
       return true;
     } catch (error) {
       get().addToast(error.message, 'error');
@@ -240,9 +239,9 @@ export const useStore = create((set, get) => ({
       if (status === 'Accepted') {
         updatedRef = await referralService.makeDecision(id, 'ACCEPTED');
       } else if (status === 'Dispatch Requested') {
-        updatedRef = await referralService.makeDecision(id, 'DISPATCH_REQUESTED');
+        updatedRef = await referralService.updateStatus(id, 'DISPATCH_REQUESTED');
       } else if (status === 'Dispatched') {
-        updatedRef = await referralService.makeDecision(id, 'DISPATCHED');
+        updatedRef = await referralService.updateStatus(id, 'DISPATCHED');
       } else if (status === 'In Transit') {
         updatedRef = await referralService.updateStatus(id, 'ARRIVED');
       } else if (status === 'Arrived') {

@@ -31,8 +31,10 @@ export default function ReferralDetails() {
   const transitionStatus = async () => {
     const statuses = ['Pending', 'Accepted', 'Dispatch Requested', 'Dispatched', 'In Transit', 'Arrived', 'Completed'];
     const currentIndex = statuses.indexOf(referral.status);
-    const nextStatus = statuses[currentIndex + 1];
     
+    if (currentIndex === -1 || referral.status === 'Rejected' || referral.status === 'Completed') return;
+    
+    const nextStatus = statuses[currentIndex + 1];
     if (!nextStatus) return;
 
     // RBAC Check
@@ -72,11 +74,16 @@ export default function ReferralDetails() {
     }
 
     setIsUpdating(true);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate logic
-    
-    updateReferralStatus(id, nextStatus);
-    addToast(`Referral transitioned to ${nextStatus}`);
+    await updateReferralStatus(id, nextStatus);
     setIsUpdating(false);
+  };
+
+  const getNextStatusLabel = () => {
+    if (referral.status === 'Rejected' || referral.status === 'Completed') return null;
+    const statuses = ['Pending', 'Accepted', 'Dispatch Requested', 'Dispatched', 'In Transit', 'Arrived', 'Completed'];
+    const currentIndex = statuses.indexOf(referral.status);
+    if (currentIndex === -1 || currentIndex === statuses.length - 1) return null;
+    return statuses[currentIndex + 1];
   };
 
   const getStatusIcon = (status) => {
@@ -210,13 +217,7 @@ export default function ReferralDetails() {
                     >
                       {isUpdating ? 'Executing...' : (
                         <>
-                          <span>Advance to: {
-                            referral.status === 'Pending' ? 'Accepted' :
-                            referral.status === 'Accepted' ? 'Dispatch Requested' :
-                            referral.status === 'Dispatch Requested' ? 'Dispatched' :
-                            referral.status === 'Dispatched' ? 'In Transit' :
-                            referral.status === 'In Transit' ? 'Arrived' : 'Completed'
-                          }</span>
+                          <span>Advance to: {getNextStatusLabel()}</span>
                           <ArrowLeft size={16} className="rotate-180" />
                         </>
                       )}
@@ -299,13 +300,7 @@ export default function ReferralDetails() {
                 >
                   {isUpdating ? 'Executing...' : (
                     <>
-                      <span>Advance to: {
-                        referral.status === 'Pending' ? 'Accepted' :
-                        referral.status === 'Accepted' ? 'Dispatch Requested' :
-                        referral.status === 'Dispatch Requested' ? 'Dispatched' :
-                        referral.status === 'Dispatched' ? 'In Transit' :
-                        referral.status === 'In Transit' ? 'Arrived' : 'Completed'
-                      }</span>
+                      <span>Advance to: {getNextStatusLabel()}</span>
                       <ArrowLeft size={16} className="rotate-180" />
                     </>
                   )}
