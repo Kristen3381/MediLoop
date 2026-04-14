@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { authService, referralService } from '../services/api';
 
 // Healthcare Personnel in Kakamega
 export const STAFF = {
@@ -92,57 +93,46 @@ const INITIAL_PATIENTS = [
   { id: 'PAT-4', name: 'Omondi Onyango', age: 62, gender: 'Male', phone: '0700112233', condition: 'Hypertensive crisis', history: 'Hypertension diagnosed 2022. Smoker.' }
 ];
 
-const INITIAL_REFERRALS = [
-  { 
-    id: 'REF-101', 
-    patientId: 'PAT-1', 
-    fromFacility: 'Lumakanda Sub-County Hospital', 
-    toFacility: 'Kakamega County General Hospital (Level 5)', 
-    reason: 'Severe abdominal pain, suspected appendicitis. Vitals unstable.',
-    status: 'In Transit',
-    assignedDoctor: 'Dr. Brian Ochieng',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-    timeline: [
-      { status: 'Created', time: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
-      { status: 'Accepted', time: new Date(Date.now() - 1000 * 60 * 50).toISOString() },
-      { status: 'In Transit', time: new Date(Date.now() - 1000 * 60 * 20).toISOString() }
-    ],
-    messages: [
-      { sender: 'Dr. Mercy Akinyi', text: 'Patient referred with severe abdominal pain. Vitals unstable.', time: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
-      { sender: 'Dr. Brian Ochieng', text: 'Received. Prepare theatre for emergency appendectomy.', time: new Date(Date.now() - 1000 * 60 * 45).toISOString() }
-    ]
-  },
-  { 
-    id: 'REF-102', 
-    patientId: 'PAT-3', 
-    fromFacility: 'Malava Sub-County Hospital', 
-    toFacility: 'Kakamega County General Hospital (Level 5)', 
-    reason: 'Severe malaria with anemia. Requires blood transfusion.',
-    status: 'Pending',
-    assignedDoctor: 'Dr. Mercy Akinyi',
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    timeline: [
-      { status: 'Created', time: new Date(Date.now() - 1000 * 60 * 30).toISOString() }
-    ],
-    messages: []
-  }
-];
+const BACKEND_ROLE_MAP = {
+  'DOCTOR': 'Doctor',
+  'NURSE': 'Nurse',
+  'ADMIN': 'Admin',
+  'AMBULANCE': 'Ambulance Staff'
+};
 
-export const useStore = create((set) => ({
+export const useStore = create((set, get) => ({
   user: null,
+  token: localStorage.getItem('token'),
   patients: INITIAL_PATIENTS,
-  referrals: INITIAL_REFERRALS,
+  referrals: [],
   facilities: INITIAL_FACILITIES,
-  notifications: [
-    { id: 1, message: 'New referral from Malava Sub-County Hospital', read: false, time: new Date().toISOString() },
-    { id: 2, message: 'Patient arrived at Kakamega County General', read: false, time: new Date().toISOString() }
-  ],
+  notifications: [],
   toasts: [],
   isDark: localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches),
   
   // Auth
-  login: (userData) => set({ user: userData }),
-  logout: () => set({ user: null }),
+  login: async (email, password) => {
+    try {
+      const data = await authService.login(email, password);
+      set({ 
+        user: { 
+          ...data.user, 
+          role: BACKEND_ROLE_MAP[data.user.role] || data.user.role 
+        }, 
+        token: data.token 
+      });
+      get().addToast('Login successful');
+      return true;
+    } catch (error) {
+      get().addToast(error.message, 'error');
+      return false;
+    }
+  },
+  
+  logout: () => {
+    authService.logout();
+    set({ user: null, token: null });
+  },
 
   // Theme
   toggleTheme: () => set((state) => {
@@ -169,58 +159,36 @@ export const useStore = create((set) => ({
   })),
 
   // Referrals
-  addReferral: (referral) => set((state) => {
-    const newRef = { 
-      ...referral, 
-      id: `REF-${Math.floor(Math.random() * 1000)}`,
-      status: 'Pending',
-      createdAt: new Date().toISOString(),
-      timeline: [{ status: 'Created', time: new Date().toISOString() }],
-      messages: []
-    };
-    
-    // Auto-notify
-    const newNotif = {
-      id: Date.now(),
-      message: `New referral created for ${state.patients.find(p => p.id === referral.patientId)?.name}`,
-      read: false,
-      time: new Date().toISOString()
-    };
+  fetchReferrals: async () => {
+    try {
+      const referrals = await referralService.getAll();
+      set({ referrals });
+    } catch (error) {
+      get().addToast('Failed to fetch referrals', 'error');
+    }
+  },
 
-    return { 
-      referrals: [...state.referrals, newRef],
-      notifications: [newNotif, ...state.notifications]
-    };
-  }),
+  addReferral: async (referralData) => {
+    try {
+      const newRef = await referralService.create(referralData);
+      set((state) => ({ referrals: [newRef, ...state.referrals] }));
+      get().addToast('Referral initiated successfully');
+    } catch (error) {
+      get().addToast(error.message, 'error');
+    }
+  },
 
-  updateReferralStatus: (id, newStatus) => set((state) => {
-    const updatedReferrals = state.referrals.map(ref => {
-      if (ref.id === id) {
-        return {
-          ...ref,
-          status: newStatus,
-          timeline: [...ref.timeline, { status: newStatus, time: new Date().toISOString() }]
-        }
-      }
-      return ref;
-    });
-
-    const referral = updatedReferrals.find(r => r.id === id);
-    const patient = state.patients.find(p => p.id === referral.patientId);
-    
-    // Auto-notify
-    const newNotif = {
-      id: Date.now(),
-      message: `Referral ${id} for ${patient?.name} is now ${newStatus}`,
-      read: false,
-      time: new Date().toISOString()
-    };
-
-    return {
-      referrals: updatedReferrals,
-      notifications: [newNotif, ...state.notifications]
-    };
-  }),
+  updateReferralStatus: async (id, status) => {
+    try {
+      const updatedRef = await referralService.updateStatus(id, status);
+      set((state) => ({
+        referrals: state.referrals.map(r => r._id === id ? updatedRef : r)
+      }));
+      get().addToast(`Referral status updated to ${status}`);
+    } catch (error) {
+      get().addToast(error.message, 'error');
+    }
+  },
 
   addMessage: (referralId, sender, text) => set((state) => ({
     referrals: state.referrals.map(ref => {
